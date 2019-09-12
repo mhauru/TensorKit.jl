@@ -341,3 +341,82 @@ function Base.show(io::IO, c::CU1Irrep)
         end
     end
 end
+
+# FibonacciAnyons
+
+const goldenratio = (1.0 + sqrt(5.0)) / 2.0
+
+struct FibonacciAnyon <: Sector
+    s::Symbol
+    function FibonacciAnyon(s)
+        if !(s in (:I, :τ))
+            throw(ArgumentError("Unknown FibonacciAnyon $s."))
+        end
+        new(s)
+    end
+end
+
+function Base.convert(::Type{Int}, a::FibonacciAnyon)
+    return a.s == :I ? 1 : 2
+end
+
+Base.convert(::Type{FibonacciAnyon}, s::Symbol) = FibonacciAnyon(s)
+Base.convert(::Type{Symbol}, a::FibonacciAnyon) = a.s
+Base.one(::Type{FibonacciAnyon}) = FibonacciAnyon(:I)
+Base.conj(s::FibonacciAnyon) = s
+
+function ⊗(a::FibonacciAnyon, b::FibonacciAnyon)
+    if a.s == :I
+        return [b]
+    elseif b.s == :I
+        return [a]
+    else
+        return [FibonacciAnyon(:I), FibonacciAnyon(:τ)]
+    end
+end
+
+dim(a::FibonacciAnyon) = a.s == :I ? 1.0 : goldenratio
+Base.@pure FusionStyle(::Type{FibonacciAnyon}) = SimpleNonAbelian()
+# TODO BraidingStyle should really be Anyonic(), but that's unimplemented at
+# the moment.
+Base.@pure BraidingStyle(::Type{FibonacciAnyon}) = Bosonic()
+
+function Nsymbol(a::FibonacciAnyon, b::FibonacciAnyon, c::FibonacciAnyon)
+    return ((a.s == :I && b.s == c.s)
+            || (b.s == :I && a.s == c.s)
+            || (c.s == :I && a.s == b.s)
+            || (a.s == :τ && b.s == :τ && c.s == :τ)
+           )
+end
+
+function Fsymbol(a::FibonacciAnyon, b::FibonacciAnyon, c::FibonacciAnyon,
+                 d::FibonacciAnyon, e::FibonacciAnyon, f::FibonacciAnyon)
+    Nsymbol(a, b, e) || return 0.0
+    Nsymbol(e, c, d) || return 0.0
+    Nsymbol(b, c, f) || return 0.0
+    Nsymbol(a, f, d) || return 0.0
+    if a.s == b.s == c.s == d.s == :τ
+        if e.s == f.s == :I
+            return 1.0/goldenratio
+        elseif e.s == f.s == :τ
+            return -1.0/goldenratio
+        else
+            return 1.0/sqrt(goldenratio)
+        end
+    else
+        return 1.0
+    end
+end
+
+function Rsymbol(a::FibonacciAnyon, b::FibonacciAnyon, c::FibonacciAnyon)
+    Nsymbol(a, b, c) || return 0.0
+    return 1.0
+end
+
+Base.show(io::IO, ::Type{FibonacciAnyon}) = print(io, "FibonacciAnyon")
+function Base.show(io::IO, s::FibonacciAnyon)
+    return get(io, :compact, false) ? print(io, ":", s.s) : print(io, "FibonacciAnyon(:", s.s, ")")
+end
+
+Base.hash(s::FibonacciAnyon, h::UInt) = hash(s.s, h)
+Base.isless(a::FibonacciAnyon, b::FibonacciAnyon) = isless(convert(Int, a), convert(Int, b))

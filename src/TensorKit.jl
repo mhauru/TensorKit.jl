@@ -19,6 +19,7 @@ export FusionTree
 export IndexSpace, TensorSpace, AbstractTensorMap, AbstractTensor, TensorMap, Tensor # tensors and tensor properties
 export TruncationScheme
 export SpaceMismatch, SectorMismatch, IndexError # error types
+export FibonacciAnyon
 
 # general vector space methods
 export space, field, dual, dim, dims, fuse, flip, isdual
